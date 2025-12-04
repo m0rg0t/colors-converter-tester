@@ -1,9 +1,11 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect, useRef } from 'react'
 import { colord, extend } from 'colord'
 import cmykPlugin from 'colord/plugins/cmyk'
 import convert from 'color-convert'
 import Color from 'color'
 import chroma from 'chroma-js'
+import { instantiate, TYPE_RGB_8, TYPE_CMYK_8, INTENT_PERCEPTUAL } from 'lcms-wasm'
+import wasmFileURI from 'lcms-wasm/dist/lcms.wasm?url'
 import './App.css'
 
 // Extend colord with CMYK support
@@ -13,6 +15,64 @@ function App() {
   const [colorInput, setColorInput] = useState('#3498db')
   const [inputType, setInputType] = useState('hex')
   const [error, setError] = useState('')
+  const [iccReady, setIccReady] = useState(false)
+  const [iccError, setIccError] = useState('')
+  const lcmsRef = useRef(null)
+  const transformRef = useRef(null)
+
+  // Initialize lcms-wasm and ICC profiles
+  useEffect(() => {
+    const initICC = async () => {
+      try {
+        // Instantiate lcms-wasm
+        const lcms = await instantiate({
+          locateFile: () => wasmFileURI
+        })
+        lcmsRef.current = lcms
+
+        // Create sRGB input profile (built-in)
+        const srgbProfile = lcms.cmsCreate_sRGBProfile()
+        if (!srgbProfile) {
+          throw new Error('Failed to create sRGB profile')
+        }
+
+        // Load CMYK profile from file
+        const response = await fetch('/profiles/GenericCMYK.icc')
+        if (!response.ok) {
+          throw new Error('Failed to load CMYK profile')
+        }
+        const buffer = await response.arrayBuffer()
+        const cmykProfile = lcms.cmsOpenProfileFromMem(
+          new Uint8Array(buffer),
+          buffer.byteLength
+        )
+        if (!cmykProfile) {
+          throw new Error('Failed to parse CMYK profile')
+        }
+
+        // Create transform: sRGB -> CMYK with perceptual intent
+        const transform = lcms.cmsCreateTransform(
+          srgbProfile,
+          TYPE_RGB_8,
+          cmykProfile,
+          TYPE_CMYK_8,
+          INTENT_PERCEPTUAL,
+          0
+        )
+        if (!transform) {
+          throw new Error('Failed to create color transform')
+        }
+        transformRef.current = transform
+
+        setIccReady(true)
+      } catch (err) {
+        console.error('ICC initialization error:', err)
+        setIccError(err.message)
+      }
+    }
+
+    initICC()
+  }, [])
 
   // Parse input and get color value
   const getColorValue = useCallback(() => {
@@ -150,14 +210,58 @@ function App() {
     }
   }, [])
 
+  // Convert using lcms-wasm with ICC profile (like Adobe Photoshop)
+  const convertWithICC = useCallback((colorValue) => {
+    if (!iccReady || !lcmsRef.current || !transformRef.current) {
+      return null
+    }
+
+    try {
+      const lcms = lcmsRef.current
+      const transform = transformRef.current
+
+      // Get RGB values
+      let r, g, b
+      if (colorValue.hex) {
+        const hex = colorValue.hex.replace('#', '')
+        r = parseInt(hex.substring(0, 2), 16)
+        g = parseInt(hex.substring(2, 4), 16)
+        b = parseInt(hex.substring(4, 6), 16)
+      } else if (colorValue.rgb) {
+        r = colorValue.rgb.r
+        g = colorValue.rgb.g
+        b = colorValue.rgb.b
+      }
+
+      // Perform ICC transform
+      const input = new Uint8Array([r, g, b])
+      const output = lcms.cmsDoTransform(transform, input, 1)
+
+      // Convert from 0-255 to 0-100 percentage
+      return {
+        c: Math.round(output[0] / 255 * 100),
+        m: Math.round(output[1] / 255 * 100),
+        y: Math.round(output[2] / 255 * 100),
+        k: Math.round(output[3] / 255 * 100),
+        hex: colorValue.hex || `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`,
+        rgb: { r, g, b }
+      }
+    } catch (err) {
+      console.error('ICC conversion error:', err)
+      return null
+    }
+  }, [iccReady])
+
   const colorValue = getColorValue()
   const colordResult = colorValue ? convertWithColord(colorValue) : null
   const colorConvertResult = colorValue ? convertWithColorConvert(colorValue) : null
   const colorResult = colorValue ? convertWithColor(colorValue) : null
   const chromaResult = colorValue ? convertWithChroma(colorValue) : null
+  const iccResult = colorValue ? convertWithICC(colorValue) : null
 
-  // Collect all results for comparison
-  const allResults = [colordResult, colorConvertResult, colorResult, chromaResult].filter(Boolean)
+  // Collect all math-based results for comparison (ICC is different by design)
+  const mathResults = [colordResult, colorConvertResult, colorResult, chromaResult].filter(Boolean)
+  const allResults = [...mathResults, iccResult].filter(Boolean)
 
   // Check if all results are identical
   const allIdentical = allResults.length > 1 && allResults.every(r =>
@@ -331,14 +435,43 @@ function App() {
                   badge="npm: chroma-js"
                 />
               )}
+
+              {/* ICC Profile-based conversion (like Adobe Photoshop) */}
+              {iccResult ? (
+                <ResultCard
+                  title="ICC Profile"
+                  url="https://www.littlecms.com/"
+                  result={iccResult}
+                  badge="Generic CMYK"
+                />
+              ) : (
+                <div className="result-card result-card-loading">
+                  <div className="result-card-header">
+                    <h3>ICC Profile</h3>
+                    <span className="library-badge">
+                      {iccError ? 'error' : 'loading...'}
+                    </span>
+                  </div>
+                  <div className="icc-status">
+                    {iccError ? (
+                      <p className="icc-error">{iccError}</p>
+                    ) : (
+                      <p className="icc-loading">Loading WASM & ICC profile...</p>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
 
-            {allResults.length > 1 && (
+            {mathResults.length > 1 && (
               <div className="comparison">
                 {allIdentical ? (
-                  <p className="match">All {allResults.length} libraries produce identical results</p>
+                  <p className="match">All {mathResults.length} math-based libraries produce identical results</p>
                 ) : (
-                  <p className="diff">{uniqueResults} unique results — rounding variance detected</p>
+                  <p className="diff">{uniqueResults} unique results among math-based libraries</p>
+                )}
+                {iccResult && (
+                  <p className="icc-note">ICC Profile uses device-specific conversion (like Adobe Photoshop)</p>
                 )}
               </div>
             )}

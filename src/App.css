@@ -545,6 +545,57 @@
   content: '△ ';
 }
 
+.comparison .icc-note {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-muted);
+  margin: var(--space-sm) 0 0;
+}
+
+.comparison .icc-note::before {
+  content: '◈ ';
+  color: #00ffff;
+}
+
+/* ICC loading/error states */
+.result-card-loading {
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+}
+
+.icc-status {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-md);
+}
+
+.icc-loading {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.icc-error {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--warning-raw);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
 /* Footer credit */
 .footer {
   margin-top: var(--space-xl);
