@@ -1,68 +1,131 @@
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;700&display=swap');
+
 :root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
+  /* Brutalist palette - raw and unapologetic */
+  --bg-primary: #0a0a0a;
+  --bg-secondary: #141414;
+  --bg-tertiary: #1a1a1a;
+  --text-primary: #fafafa;
+  --text-secondary: #888;
+  --text-muted: #555;
+  --border-harsh: #333;
+  --border-accent: #fff;
+  --error-raw: #ff3333;
+  --success-raw: #00ff66;
+  --warning-raw: #ffcc00;
+
+  /* Typography */
+  --font-display: 'Bebas Neue', Impact, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  /* Spacing - deliberate and structured */
+  --space-xs: 4px;
+  --space-sm: 8px;
+  --space-md: 16px;
+  --space-lg: 32px;
+  --space-xl: 64px;
+
+  /* Borders - thick and visible */
+  --border-thin: 1px solid var(--border-harsh);
+  --border-medium: 2px solid var(--border-harsh);
+  --border-thick: 4px solid var(--border-accent);
+
+  font-family: var(--font-mono);
   line-height: 1.5;
   font-weight: 400;
+  font-size: 14px;
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  color-scheme: dark;
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
 
   font-synthesis: none;
-  text-rendering: optimizeLegibility;
+  text-rendering: geometricPrecision;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
+*, *::before, *::after {
+  box-sizing: border-box;
 }
-a:hover {
-  color: #535bf2;
+
+::selection {
+  background: var(--text-primary);
+  color: var(--bg-primary);
 }
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
+  min-height: 100vh;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 99px,
+      var(--border-harsh) 99px,
+      var(--border-harsh) 100px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 99px,
+      var(--border-harsh) 99px,
+      var(--border-harsh) 100px
+    ),
+    var(--bg-primary);
+  background-attachment: fixed;
+}
+
+#root {
+  width: 100%;
   min-height: 100vh;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+a {
+  color: var(--text-primary);
+  text-decoration: none;
+  border-bottom: 2px solid var(--text-primary);
+  transition: border-color 0.1s;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+a:hover {
+  border-color: transparent;
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+/* Custom scrollbar - minimal */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-harsh);
+  border: 2px solid var(--bg-primary);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-secondary);
+}
+
+/* Focus states - brutally visible */
+*:focus-visible {
+  outline: 4px solid var(--text-primary);
+  outline-offset: 2px;
+}
+
+/* Utility classes */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
