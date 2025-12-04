@@ -18,7 +18,11 @@ function App() {
   const [iccReady, setIccReady] = useState(false)
   const [iccError, setIccError] = useState('')
   const lcmsRef = useRef(null)
-  const transformRef = useRef(null)
+  const transformsRef = useRef({
+    generic: null,
+    photoshop4: null,
+    photoshop5: null
+  })
 
   // Initialize lcms-wasm and ICC profiles
   useEffect(() => {
@@ -36,33 +40,42 @@ function App() {
           throw new Error('Failed to create sRGB profile')
         }
 
-        // Load CMYK profile from file
-        const response = await fetch('/profiles/GenericCMYK.icc')
-        if (!response.ok) {
-          throw new Error('Failed to load CMYK profile')
-        }
-        const buffer = await response.arrayBuffer()
-        const cmykProfile = lcms.cmsOpenProfileFromMem(
-          new Uint8Array(buffer),
-          buffer.byteLength
-        )
-        if (!cmykProfile) {
-          throw new Error('Failed to parse CMYK profile')
-        }
+        // Define all CMYK profiles to load
+        const profiles = [
+          { key: 'generic', path: '/profiles/GenericCMYK.icc' },
+          { key: 'photoshop4', path: '/profiles/Photoshop4DefaultCMYK.icc' },
+          { key: 'photoshop5', path: '/profiles/Photoshop5DefaultCMYK.icc' }
+        ]
 
-        // Create transform: sRGB -> CMYK with perceptual intent
-        const transform = lcms.cmsCreateTransform(
-          srgbProfile,
-          TYPE_RGB_8,
-          cmykProfile,
-          TYPE_CMYK_8,
-          INTENT_PERCEPTUAL,
-          0
-        )
-        if (!transform) {
-          throw new Error('Failed to create color transform')
+        // Load each CMYK profile and create transforms
+        for (const profile of profiles) {
+          const response = await fetch(profile.path)
+          if (!response.ok) {
+            throw new Error(`Failed to load ${profile.key} profile`)
+          }
+          const buffer = await response.arrayBuffer()
+          const cmykProfile = lcms.cmsOpenProfileFromMem(
+            new Uint8Array(buffer),
+            buffer.byteLength
+          )
+          if (!cmykProfile) {
+            throw new Error(`Failed to parse ${profile.key} profile`)
+          }
+
+          // Create transform: sRGB -> CMYK with perceptual intent
+          const transform = lcms.cmsCreateTransform(
+            srgbProfile,
+            TYPE_RGB_8,
+            cmykProfile,
+            TYPE_CMYK_8,
+            INTENT_PERCEPTUAL,
+            0
+          )
+          if (!transform) {
+            throw new Error(`Failed to create transform for ${profile.key}`)
+          }
+          transformsRef.current[profile.key] = transform
         }
-        transformRef.current = transform
 
         setIccReady(true)
       } catch (err) {
@@ -211,14 +224,14 @@ function App() {
   }, [])
 
   // Convert using lcms-wasm with ICC profile (like Adobe Photoshop)
-  const convertWithICC = useCallback((colorValue) => {
-    if (!iccReady || !lcmsRef.current || !transformRef.current) {
+  const convertWithIccProfile = useCallback((colorValue, profileKey) => {
+    const transform = transformsRef.current[profileKey]
+    if (!iccReady || !lcmsRef.current || !transform) {
       return null
     }
 
     try {
       const lcms = lcmsRef.current
-      const transform = transformRef.current
 
       // Get RGB values
       let r, g, b
@@ -257,11 +270,14 @@ function App() {
   const colorConvertResult = colorValue ? convertWithColorConvert(colorValue) : null
   const colorResult = colorValue ? convertWithColor(colorValue) : null
   const chromaResult = colorValue ? convertWithChroma(colorValue) : null
-  const iccResult = colorValue ? convertWithICC(colorValue) : null
+  const iccGenericResult = colorValue ? convertWithIccProfile(colorValue, 'generic') : null
+  const iccPhotoshop4Result = colorValue ? convertWithIccProfile(colorValue, 'photoshop4') : null
+  const iccPhotoshop5Result = colorValue ? convertWithIccProfile(colorValue, 'photoshop5') : null
 
-  // Collect all math-based results for comparison (ICC is different by design)
+  // Collect all results for comparison
   const mathResults = [colordResult, colorConvertResult, colorResult, chromaResult].filter(Boolean)
-  const allResults = [...mathResults, iccResult].filter(Boolean)
+  const iccResults = [iccGenericResult, iccPhotoshop4Result, iccPhotoshop5Result].filter(Boolean)
+  const allResults = [...mathResults, ...iccResults].filter(Boolean)
 
   // Check if all results are identical
   const allIdentical = allResults.length > 1 && allResults.every(r =>
@@ -436,18 +452,18 @@ function App() {
                 />
               )}
 
-              {/* ICC Profile-based conversion (like Adobe Photoshop) */}
-              {iccResult ? (
+              {/* ICC Profile-based conversions (like Adobe Photoshop) */}
+              {iccGenericResult ? (
                 <ResultCard
-                  title="ICC Profile"
+                  title="Generic CMYK"
                   url="https://www.littlecms.com/"
-                  result={iccResult}
-                  badge="Generic CMYK"
+                  result={iccGenericResult}
+                  badge="ICC Profile"
                 />
               ) : (
                 <div className="result-card result-card-loading">
                   <div className="result-card-header">
-                    <h3>ICC Profile</h3>
+                    <h3>Generic CMYK</h3>
                     <span className="library-badge">
                       {iccError ? 'error' : 'loading...'}
                     </span>
@@ -456,22 +472,60 @@ function App() {
                     {iccError ? (
                       <p className="icc-error">{iccError}</p>
                     ) : (
-                      <p className="icc-loading">Loading WASM & ICC profile...</p>
+                      <p className="icc-loading">Loading ICC profiles...</p>
                     )}
+                  </div>
+                </div>
+              )}
+
+              {iccPhotoshop4Result ? (
+                <ResultCard
+                  title="Photoshop 4 CMYK"
+                  url="https://www.color.org/registry/index.xalter"
+                  result={iccPhotoshop4Result}
+                  badge="ICC Profile"
+                />
+              ) : !iccError && (
+                <div className="result-card result-card-loading">
+                  <div className="result-card-header">
+                    <h3>Photoshop 4 CMYK</h3>
+                    <span className="library-badge">loading...</span>
+                  </div>
+                  <div className="icc-status">
+                    <p className="icc-loading">Loading ICC profiles...</p>
+                  </div>
+                </div>
+              )}
+
+              {iccPhotoshop5Result ? (
+                <ResultCard
+                  title="Photoshop 5 CMYK"
+                  url="https://www.color.org/registry/index.xalter"
+                  result={iccPhotoshop5Result}
+                  badge="ICC Profile"
+                />
+              ) : !iccError && (
+                <div className="result-card result-card-loading">
+                  <div className="result-card-header">
+                    <h3>Photoshop 5 CMYK</h3>
+                    <span className="library-badge">loading...</span>
+                  </div>
+                  <div className="icc-status">
+                    <p className="icc-loading">Loading ICC profiles...</p>
                   </div>
                 </div>
               )}
             </div>
 
-            {mathResults.length > 1 && (
+            {allResults.length > 1 && (
               <div className="comparison">
                 {allIdentical ? (
-                  <p className="match">All {mathResults.length} math-based libraries produce identical results</p>
+                  <p className="match">All {allResults.length} libraries produce identical results</p>
                 ) : (
-                  <p className="diff">{uniqueResults} unique results among math-based libraries</p>
+                  <p className="diff">{uniqueResults} unique results among {allResults.length} libraries</p>
                 )}
-                {iccResult && (
-                  <p className="icc-note">ICC Profile uses device-specific conversion (like Adobe Photoshop)</p>
+                {iccResults.length > 0 && (
+                  <p className="icc-note">ICC Profiles use device-specific conversion (like Adobe Photoshop)</p>
                 )}
               </div>
             )}
