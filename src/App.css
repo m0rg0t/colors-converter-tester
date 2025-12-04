@@ -1,0 +1,239 @@
+.app {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+  color: #333;
+}
+
+.subtitle {
+  color: #666;
+  margin-bottom: 2rem;
+}
+
+.input-section {
+  background: #f5f5f5;
+  padding: 1.5rem;
+  border-radius: 12px;
+  margin-bottom: 2rem;
+}
+
+.input-type-selector {
+  display: flex;
+  gap: 1.5rem;
+  margin-bottom: 1rem;
+  justify-content: center;
+}
+
+.input-type-selector label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.color-input-wrapper {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: center;
+  align-items: center;
+}
+
+.color-input {
+  padding: 0.75rem 1rem;
+  font-size: 1.1rem;
+  border: 2px solid #ddd;
+  border-radius: 8px;
+  width: 200px;
+  text-align: center;
+  transition: border-color 0.2s;
+}
+
+.color-input:focus {
+  outline: none;
+  border-color: #646cff;
+}
+
+.color-picker {
+  width: 50px;
+  height: 44px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  padding: 0;
+}
+
+.error {
+  color: #e74c3c;
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+}
+
+.preview-section {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.preview-section h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+}
+
+.color-preview {
+  width: 150px;
+  height: 150px;
+  border-radius: 12px;
+  margin: 0 auto 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  border: 3px solid #fff;
+}
+
+.preview-hex {
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0.25rem 0;
+}
+
+.preview-rgb {
+  color: #666;
+  margin: 0;
+}
+
+.results-section h2 {
+  font-size: 1.5rem;
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.result-card {
+  background: #fff;
+  border: 1px solid #e0e0e0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.result-card h3 {
+  margin: 0 0 1rem;
+  font-size: 1.2rem;
+  text-align: center;
+}
+
+.result-card h3 a {
+  color: #646cff;
+  text-decoration: none;
+}
+
+.result-card h3 a:hover {
+  text-decoration: underline;
+}
+
+.cmyk-values {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.cmyk-value {
+  text-align: center;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.cmyk-value .label {
+  display: block;
+  font-weight: 600;
+  font-size: 1.1rem;
+  color: #333;
+}
+
+.cmyk-value .value {
+  display: block;
+  font-size: 0.95rem;
+  color: #666;
+  margin-top: 0.25rem;
+}
+
+.cmyk-string {
+  text-align: center;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #666;
+  background: #f0f0f0;
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin: 0;
+}
+
+.comparison {
+  text-align: center;
+  padding: 1rem;
+  border-radius: 8px;
+}
+
+.comparison .match {
+  color: #27ae60;
+  font-weight: 500;
+  margin: 0;
+}
+
+.comparison .diff {
+  color: #f39c12;
+  font-weight: 500;
+  margin: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  h1 {
+    color: #fff;
+  }
+  
+  .subtitle {
+    color: #aaa;
+  }
+  
+  .input-section {
+    background: #2a2a2a;
+  }
+  
+  .color-input {
+    background: #1a1a1a;
+    border-color: #444;
+    color: #fff;
+  }
+  
+  .result-card {
+    background: #2a2a2a;
+    border-color: #444;
+  }
+  
+  .cmyk-value {
+    background: #1a1a1a;
+  }
+  
+  .cmyk-value .label {
+    color: #fff;
+  }
+  
+  .cmyk-string {
+    background: #1a1a1a;
+  }
+  
+  .preview-rgb {
+    color: #aaa;
+  }
+}
