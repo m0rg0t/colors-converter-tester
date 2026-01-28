@@ -36,6 +36,38 @@ const i18n = {
     colorSpacesTitle: 'Color Spaces',
     colorSpacesSubtitle: '10 color space conversions via culori',
     footer: 'Built for testing color conversion accuracy',
+    infoTitle: 'Reference Guide',
+    infoToggle: 'Why do results differ?',
+    infoColorSpaces: {
+      title: 'Color Spaces',
+      content: `Different color spaces represent colors using different mathematical models:
+• **RGB** — additive model for screens (red + green + blue light)
+• **CMYK** — subtractive model for print (cyan, magenta, yellow, black inks)
+• **HSL/HSV** — human-friendly: Hue (color), Saturation, Lightness/Value
+• **Lab** — perceptually uniform, device-independent (CIE 1976)
+• **OKLab/OKLCH** — modern perceptual spaces with better uniformity
+• **XYZ** — CIE 1931 reference space, basis for all others`,
+    },
+    infoWhyDifferent: {
+      title: 'Why CMYK Results Differ',
+      content: `RGB→CMYK conversion is not a simple formula — it depends on:
+• **Ink behavior** — how inks mix and absorb light on paper
+• **Paper type** — coated vs uncoated, white point, absorption
+• **Printing method** — offset, digital, flexo, gravure
+• **Black generation** — how much K (black) to use vs CMY mix
+
+Mathematical libraries (colord, chroma.js) use a simplified formula. ICC profiles contain measured data from real printing conditions.`,
+    },
+    infoProfiles: {
+      title: 'ICC Profiles Explained',
+      content: `• **Generic CMYK** — basic device profile, no specific print condition
+• **FOGRA39** — European standard for coated paper (ISO 12647-2), widely used in EU
+• **GRACoL 2013** — US commercial printing on premium coated paper
+• **SWOP 2013** — US web offset printing (magazines, catalogs)
+
+Choose profile matching your print vendor's specification. When in doubt, ask your printer!`,
+    },
+    infoTip: 'Tip: For web/screen use, RGB values are definitive. CMYK values only matter when preparing files for professional print.',
   },
   ru: {
     title: 'Конвертер\nЦветов',
@@ -58,6 +90,38 @@ const i18n = {
     colorSpacesTitle: 'Цветовые пространства',
     colorSpacesSubtitle: '10 преобразований цветовых пространств через culori',
     footer: 'Создано для проверки точности конвертации цветов',
+    infoTitle: 'Справка',
+    infoToggle: 'Почему результаты отличаются?',
+    infoColorSpaces: {
+      title: 'Цветовые пространства',
+      content: `Разные цветовые пространства описывают цвета разными математическими моделями:
+• **RGB** — аддитивная модель для экранов (красный + зелёный + синий свет)
+• **CMYK** — субтрактивная модель для печати (голубой, пурпурный, жёлтый, чёрный)
+• **HSL/HSV** — интуитивные: Оттенок, Насыщенность, Светлота/Яркость
+• **Lab** — перцептуально равномерное, аппаратно-независимое (CIE 1976)
+• **OKLab/OKLCH** — современные перцептуальные пространства с лучшей равномерностью
+• **XYZ** — эталонное пространство CIE 1931, основа для всех остальных`,
+    },
+    infoWhyDifferent: {
+      title: 'Почему CMYK результаты отличаются',
+      content: `Конвертация RGB→CMYK — это не простая формула, она зависит от:
+• **Поведения красок** — как краски смешиваются и поглощают свет на бумаге
+• **Типа бумаги** — мелованная/немелованная, белизна, впитываемость
+• **Способа печати** — офсет, цифра, флексо, глубокая печать
+• **Генерации чёрного** — сколько K (чёрного) использовать вместо смеси CMY
+
+Математические библиотеки (colord, chroma.js) используют упрощённую формулу. ICC профили содержат измеренные данные реальных условий печати.`,
+    },
+    infoProfiles: {
+      title: 'ICC профили',
+      content: `• **Generic CMYK** — базовый профиль, без привязки к условиям печати
+• **FOGRA39** — европейский стандарт для мелованной бумаги (ISO 12647-2)
+• **GRACoL 2013** — коммерческая печать США на мелованной бумаге премиум
+• **SWOP 2013** — рулонная офсетная печать США (журналы, каталоги)
+
+Выбирайте профиль, соответствующий спецификации вашей типографии. Если не уверены — спросите у печатника!`,
+    },
+    infoTip: 'Совет: Для веба/экрана RGB значения — это истина. CMYK важен только при подготовке файлов для профессиональной печати.',
   },
 }
 
@@ -265,6 +329,7 @@ function App() {
   const [iccError, setIccError] = useState('')
   const [isVK, setIsVK] = useState(false)
   const [lang, setLang] = useState('ru')
+  const [showInfo, setShowInfo] = useState(false)
   const lcmsRef = useRef(null)
   const transformsRef = useRef({
     generic: null,
@@ -894,6 +959,58 @@ function App() {
           </section>
         </div>
       )}
+
+      <section className="info-section">
+        <button
+          className={`info-toggle ${showInfo ? 'active' : ''}`}
+          onClick={() => setShowInfo(!showInfo)}
+        >
+          <span className="info-toggle-icon">{showInfo ? '−' : '+'}</span>
+          {t.infoToggle}
+        </button>
+
+        {showInfo && (
+          <div className="info-content">
+            <div className="info-block">
+              <h3>{t.infoColorSpaces.title}</h3>
+              <p>{t.infoColorSpaces.content.split('\n').map((line, i) => (
+                <span key={i}>
+                  {line.split('**').map((part, j) =>
+                    j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+                  )}
+                  {i < t.infoColorSpaces.content.split('\n').length - 1 && <br />}
+                </span>
+              ))}</p>
+            </div>
+
+            <div className="info-block">
+              <h3>{t.infoWhyDifferent.title}</h3>
+              <p>{t.infoWhyDifferent.content.split('\n').map((line, i) => (
+                <span key={i}>
+                  {line.split('**').map((part, j) =>
+                    j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+                  )}
+                  {i < t.infoWhyDifferent.content.split('\n').length - 1 && <br />}
+                </span>
+              ))}</p>
+            </div>
+
+            <div className="info-block">
+              <h3>{t.infoProfiles.title}</h3>
+              <p>{t.infoProfiles.content.split('\n').map((line, i) => (
+                <span key={i}>
+                  {line.split('**').map((part, j) =>
+                    j % 2 === 1 ? <strong key={j}>{part}</strong> : part
+                  )}
+                  {i < t.infoProfiles.content.split('\n').length - 1 && <br />}
+                </span>
+              ))}</p>
+            </div>
+
+            <p className="info-tip">{t.infoTip}</p>
+          </div>
+        )}
+      </section>
 
       <footer className="footer">
         <p>{t.footer}</p>
