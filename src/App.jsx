@@ -28,7 +28,11 @@ const i18n = {
     loadingIcc: 'Loading ICC profiles...',
     allMatch: (n) => `All ${n} libraries produce identical results`,
     uniqueResults: (u, n) => `${u} unique results among ${n} libraries`,
-    iccNote: 'ICC Profiles use device-specific conversion (like Adobe Photoshop)',
+    iccNote: 'ICC Profiles use industry-standard profiles for professional print workflows',
+    genericDesc: 'Generic device profile (baseline)',
+    fogra39Desc: 'European coated paper (ISO 12647-2)',
+    gracolDesc: 'North American commercial printing',
+    swopDesc: 'North American web offset printing',
     colorSpacesTitle: 'Color Spaces',
     colorSpacesSubtitle: '10 color space conversions via culori',
     footer: 'Built for testing color conversion accuracy',
@@ -46,7 +50,11 @@ const i18n = {
     loadingIcc: 'Загрузка ICC профилей...',
     allMatch: (n) => `Все ${n} библиотек дают одинаковый результат`,
     uniqueResults: (u, n) => `${u} уникальных результатов из ${n} библиотек`,
-    iccNote: 'ICC профили используют аппаратное преобразование (как в Adobe Photoshop)',
+    iccNote: 'ICC профили используют отраслевые стандарты для профессиональной печати',
+    genericDesc: 'Базовый профиль устройства',
+    fogra39Desc: 'Европейская мелованная бумага (ISO 12647-2)',
+    gracolDesc: 'Коммерческая печать (Сев. Америка)',
+    swopDesc: 'Рулонная офсетная печать (Сев. Америка)',
     colorSpacesTitle: 'Цветовые пространства',
     colorSpacesSubtitle: '10 преобразований цветовых пространств через culori',
     footer: 'Создано для проверки точности конвертации цветов',
@@ -260,8 +268,9 @@ function App() {
   const lcmsRef = useRef(null)
   const transformsRef = useRef({
     generic: null,
-    photoshop4: null,
-    photoshop5: null
+    fogra39: null,
+    gracol: null,
+    swop: null
   })
 
   const t = i18n[lang]
@@ -299,8 +308,9 @@ function App() {
         // Define all CMYK profiles to load
         const profiles = [
           { key: 'generic', path: './profiles/GenericCMYK.icc' },
-          { key: 'photoshop4', path: './profiles/Photoshop4DefaultCMYK.icc' },
-          { key: 'photoshop5', path: './profiles/Photoshop5DefaultCMYK.icc' }
+          { key: 'fogra39', path: './profiles/FOGRA39.icc' },
+          { key: 'gracol', path: './profiles/GRACoL2013_CRPC6.icc' },
+          { key: 'swop', path: './profiles/SWOP2013C3_CRPC5.icc' }
         ]
 
         // Load each CMYK profile and create transforms
@@ -552,13 +562,14 @@ function App() {
   const colorResult = colorValue ? convertWithColor(colorValue) : null
   const chromaResult = colorValue ? convertWithChroma(colorValue) : null
   const iccGenericResult = colorValue ? convertWithIccProfile(colorValue, 'generic') : null
-  const iccPhotoshop4Result = colorValue ? convertWithIccProfile(colorValue, 'photoshop4') : null
-  const iccPhotoshop5Result = colorValue ? convertWithIccProfile(colorValue, 'photoshop5') : null
+  const iccFogra39Result = colorValue ? convertWithIccProfile(colorValue, 'fogra39') : null
+  const iccGracolResult = colorValue ? convertWithIccProfile(colorValue, 'gracol') : null
+  const iccSwopResult = colorValue ? convertWithIccProfile(colorValue, 'swop') : null
   const culoriResults = colorValue ? convertWithCulori(colorValue) : null
 
   // Collect all results for comparison
   const mathResults = [colordResult, colorConvertResult, colorResult, chromaResult].filter(Boolean)
-  const iccResults = [iccGenericResult, iccPhotoshop4Result, iccPhotoshop5Result].filter(Boolean)
+  const iccResults = [iccGenericResult, iccFogra39Result, iccGracolResult, iccSwopResult].filter(Boolean)
   const allResults = [...mathResults, ...iccResults].filter(Boolean)
 
   // Check if all results are identical
@@ -784,7 +795,7 @@ function App() {
                 />
               )}
 
-              {/* ICC Profile-based conversions (like Adobe Photoshop) */}
+              {/* ICC Profile-based conversions (industry-standard profiles) */}
               {iccGenericResult ? (
                 <ResultCard
                   title="Generic CMYK"
@@ -810,17 +821,17 @@ function App() {
                 </div>
               )}
 
-              {iccPhotoshop4Result ? (
+              {iccFogra39Result ? (
                 <ResultCard
-                  title="Photoshop 4 CMYK"
-                  url="https://www.color.org/registry/index.xalter"
-                  result={iccPhotoshop4Result}
+                  title="FOGRA39"
+                  url="https://www.eci.org/"
+                  result={iccFogra39Result}
                   badge="ICC Profile"
                 />
               ) : !iccError && (
                 <div className="result-card result-card-loading">
                   <div className="result-card-header">
-                    <h3>Photoshop 4 CMYK</h3>
+                    <h3>FOGRA39</h3>
                     <span className="library-badge">loading...</span>
                   </div>
                   <div className="icc-status">
@@ -829,17 +840,36 @@ function App() {
                 </div>
               )}
 
-              {iccPhotoshop5Result ? (
+              {iccGracolResult ? (
                 <ResultCard
-                  title="Photoshop 5 CMYK"
-                  url="https://www.color.org/registry/index.xalter"
-                  result={iccPhotoshop5Result}
+                  title="GRACoL 2013"
+                  url="https://www.idealliance.org/"
+                  result={iccGracolResult}
                   badge="ICC Profile"
                 />
               ) : !iccError && (
                 <div className="result-card result-card-loading">
                   <div className="result-card-header">
-                    <h3>Photoshop 5 CMYK</h3>
+                    <h3>GRACoL 2013</h3>
+                    <span className="library-badge">loading...</span>
+                  </div>
+                  <div className="icc-status">
+                    <p className="icc-loading">{t.loadingIcc}</p>
+                  </div>
+                </div>
+              )}
+
+              {iccSwopResult ? (
+                <ResultCard
+                  title="SWOP 2013"
+                  url="https://www.idealliance.org/"
+                  result={iccSwopResult}
+                  badge="ICC Profile"
+                />
+              ) : !iccError && (
+                <div className="result-card result-card-loading">
+                  <div className="result-card-header">
+                    <h3>SWOP 2013</h3>
                     <span className="library-badge">loading...</span>
                   </div>
                   <div className="icc-status">
