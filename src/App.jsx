@@ -720,6 +720,19 @@ function App() {
         </div>
       </section>
 
+      {/* Extended Color Spaces via culori */}
+      {colorValue && culoriResults && (
+        <section className="color-spaces-section">
+          <h2 className="color-spaces-title">{t.colorSpacesTitle}</h2>
+          <p className="color-spaces-subtitle">{t.colorSpacesSubtitle}</p>
+          <div className="color-spaces-grid">
+            {culoriResults.map((space) => (
+              <ColorSpaceCard key={space.id} space={space} />
+            ))}
+          </div>
+        </section>
+      )}
+
       {colorValue && colordResult && (
         <div className="content-grid">
           <section className="preview-section">
@@ -850,19 +863,6 @@ function App() {
             )}
           </section>
         </div>
-      )}
-
-      {/* Extended Color Spaces via culori */}
-      {colorValue && culoriResults && (
-        <section className="color-spaces-section">
-          <h2 className="color-spaces-title">{t.colorSpacesTitle}</h2>
-          <p className="color-spaces-subtitle">{t.colorSpacesSubtitle}</p>
-          <div className="color-spaces-grid">
-            {culoriResults.map((space) => (
-              <ColorSpaceCard key={space.id} space={space} />
-            ))}
-          </div>
-        </section>
       )}
 
       <footer className="footer">
