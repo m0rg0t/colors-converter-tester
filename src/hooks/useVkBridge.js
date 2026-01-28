@@ -10,10 +10,13 @@ export function useVkBridge() {
 
   useEffect(() => {
     const showVKBanner = async () => {
+      console.log('[VK Bridge] Attempting to show banner ad...')
       try {
         await bridge.send('VKWebAppShowBannerAd', { banner_location: 'bottom' })
+        console.log('[VK Bridge] Banner ad shown successfully')
         setIsVK(true)
-      } catch {
+      } catch (error) {
+        console.log('[VK Bridge] Failed to show banner:', error)
         // Not inside VK or banner not available
       }
     }
