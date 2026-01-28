@@ -340,18 +340,17 @@ function App() {
 
   const t = i18n[lang]
 
-  // Initialize VK Bridge and show banner ad
+  // Show VK banner ad (VKWebAppInit already called in main.jsx)
   useEffect(() => {
-    const initVK = async () => {
+    const showVKBanner = async () => {
       try {
-        await bridge.send('VKWebAppInit')
+        await bridge.send('VKWebAppShowBannerAd', { banner_location: 'bottom' })
         setIsVK(true)
-        bridge.send('VKWebAppShowBannerAd', { banner_location: 'bottom' }).catch(() => {})
       } catch {
-        // Not inside VK
+        // Not inside VK or banner not available
       }
     }
-    initVK()
+    showVKBanner()
   }, [])
 
   // Initialize lcms-wasm and ICC profiles
