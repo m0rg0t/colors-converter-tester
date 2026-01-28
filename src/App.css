@@ -17,6 +17,12 @@
   border-bottom: var(--border-thick);
 }
 
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
 .header h1 {
   font-family: var(--font-display);
   font-size: clamp(4rem, 15vw, 10rem);
@@ -25,6 +31,39 @@
   text-transform: uppercase;
   margin: 0;
   color: var(--text-primary);
+}
+
+/* Language Switcher */
+.lang-switcher {
+  display: flex;
+  gap: 2px;
+  flex-shrink: 0;
+  margin-top: var(--space-sm);
+}
+
+.lang-button {
+  padding: var(--space-xs) var(--space-sm);
+  background: transparent;
+  border: var(--border-medium);
+  color: var(--text-muted);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  cursor: pointer;
+  transition: all 0.1s;
+}
+
+.lang-button:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.lang-button.active {
+  background: var(--text-primary);
+  color: var(--bg-primary);
+  border-color: var(--text-primary);
 }
 
 .header .subtitle {
@@ -594,6 +633,172 @@
 @keyframes pulse {
   0%, 100% { opacity: 0.4; }
   50% { opacity: 1; }
+}
+
+/* VK Mini App — bottom padding for banner ad */
+.app--vk {
+  padding-bottom: 80px;
+}
+
+/* ===========================================
+   COLOR SPACES SECTION (culori)
+=========================================== */
+.color-spaces-section {
+  margin-top: var(--space-xl);
+  padding: var(--space-lg);
+  background: var(--bg-secondary);
+  border: var(--border-medium);
+  position: relative;
+  animation: reveal 0.4s ease-out;
+}
+
+.color-spaces-title {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.color-spaces-subtitle {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin: var(--space-sm) 0 var(--space-lg);
+}
+
+.color-spaces-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-md);
+}
+
+/* Color Space Card */
+.color-space-card {
+  padding: var(--space-md);
+  background: var(--bg-tertiary);
+  border: var(--border-thin);
+  transition: border-color 0.1s;
+}
+
+.color-space-card:hover {
+  border-color: var(--text-secondary);
+}
+
+.color-space-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: var(--space-md);
+  padding-bottom: var(--space-sm);
+  border-bottom: var(--border-thin);
+}
+
+.color-space-header h4 {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  margin: 0;
+  color: var(--text-primary);
+}
+
+.color-space-badge {
+  font-family: var(--font-mono);
+  font-size: 0.625rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.15em;
+}
+
+.color-space-channels {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+}
+
+.channel {
+  text-align: center;
+  padding: var(--space-sm) var(--space-xs);
+  background: var(--bg-primary);
+  border: var(--border-thin);
+}
+
+.channel-label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 1rem;
+  line-height: 1;
+  margin-bottom: var(--space-xs);
+  color: #00ffff;
+}
+
+.channel-value {
+  display: block;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.color-space-css {
+  font-family: var(--font-mono);
+  font-size: 0.65rem;
+  color: var(--text-secondary);
+  background: var(--bg-primary);
+  padding: var(--space-xs) var(--space-sm);
+  border: var(--border-thin);
+  margin: 0;
+  user-select: all;
+  cursor: pointer;
+  word-break: break-all;
+  line-height: 1.4;
+}
+
+.color-space-css:hover {
+  border-color: var(--text-secondary);
+}
+
+/* Responsive: Color spaces grid */
+@media (max-width: 768px) {
+  .color-spaces-section {
+    padding: var(--space-md);
+    margin-top: var(--space-lg);
+  }
+
+  .color-spaces-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-sm);
+  }
+
+  .color-spaces-title {
+    font-size: 2rem;
+  }
+}
+
+@media (max-width: 600px) {
+  .color-spaces-grid {
+    grid-template-columns: 1fr;
+    gap: var(--space-sm);
+  }
+
+  .color-space-card {
+    padding: var(--space-sm);
+  }
+
+  .color-space-header h4 {
+    font-size: 1rem;
+  }
+
+  .channel-value {
+    font-size: 0.65rem;
+  }
 }
 
 /* Footer credit */

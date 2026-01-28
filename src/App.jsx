@@ -6,10 +6,248 @@ import Color from 'color'
 import chroma from 'chroma-js'
 import { instantiate, TYPE_RGB_8, TYPE_CMYK_8, INTENT_PERCEPTUAL } from 'lcms-wasm'
 import wasmFileURI from 'lcms-wasm/dist/lcms.wasm?url'
+import { converter } from 'culori'
+import bridge from '@vkontakte/vk-bridge'
 import './App.css'
 
 // Extend colord with CMYK support
 extend([cmykPlugin])
+
+// Translations
+const i18n = {
+  en: {
+    title: 'Color\nConverter',
+    subtitle: 'HEX / RGB → CMYK + 10 Color Spaces // Multi-library comparison',
+    inputLabel: 'INPUT',
+    previewLabel: 'PREVIEW',
+    cmykOutputLabel: 'CMYK OUTPUT',
+    hexPlaceholder: '#RRGGBB',
+    rgbPlaceholder: 'R, G, B',
+    invalidHex: 'Invalid HEX // Expected: #RRGGBB or RRGGBB',
+    invalidRgb: 'Invalid RGB // Expected: R, G, B (0-255)',
+    loadingIcc: 'Loading ICC profiles...',
+    allMatch: (n) => `All ${n} libraries produce identical results`,
+    uniqueResults: (u, n) => `${u} unique results among ${n} libraries`,
+    iccNote: 'ICC Profiles use device-specific conversion (like Adobe Photoshop)',
+    colorSpacesTitle: 'Color Spaces',
+    colorSpacesSubtitle: '10 color space conversions via culori',
+    footer: 'Built for testing color conversion accuracy',
+  },
+  ru: {
+    title: 'Конвертер\nЦветов',
+    subtitle: 'HEX / RGB → CMYK + 10 цветовых пространств // Сравнение библиотек',
+    inputLabel: 'ВВОД',
+    previewLabel: 'ПРЕДПРОСМОТР',
+    cmykOutputLabel: 'CMYK РЕЗУЛЬТАТ',
+    hexPlaceholder: '#RRGGBB',
+    rgbPlaceholder: 'R, G, B',
+    invalidHex: 'Неверный HEX // Ожидается: #RRGGBB или RRGGBB',
+    invalidRgb: 'Неверный RGB // Ожидается: R, G, B (0-255)',
+    loadingIcc: 'Загрузка ICC профилей...',
+    allMatch: (n) => `Все ${n} библиотек дают одинаковый результат`,
+    uniqueResults: (u, n) => `${u} уникальных результатов из ${n} библиотек`,
+    iccNote: 'ICC профили используют аппаратное преобразование (как в Adobe Photoshop)',
+    colorSpacesTitle: 'Цветовые пространства',
+    colorSpacesSubtitle: '10 преобразований цветовых пространств через culori',
+    footer: 'Создано для проверки точности конвертации цветов',
+  },
+}
+
+// Culori converters — created once at module level
+const toHsl = converter('hsl')
+const toHsv = converter('hsv')
+const toHwb = converter('hwb')
+const toLab = converter('lab')
+const toLch = converter('lch')
+const toOklab = converter('oklab')
+const toOklch = converter('oklch')
+const toXyz65 = converter('xyz65')
+const toLrgb = converter('lrgb')
+const toP3 = converter('p3')
+
+// Color space configuration
+const COLOR_SPACES = [
+  {
+    id: 'hsl',
+    name: 'HSL',
+    convert: toHsl,
+    channels: ['h', 's', 'l'],
+    labels: ['H', 'S', 'L'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.h ?? 0).toFixed(1)}°`,
+          `${((v.s ?? 0) * 100).toFixed(1)}%`,
+          `${((v.l ?? 0) * 100).toFixed(1)}%`,
+        ],
+        css: `hsl(${(v.h ?? 0).toFixed(1)} ${((v.s ?? 0) * 100).toFixed(1)}% ${((v.l ?? 0) * 100).toFixed(1)}%)`,
+      }
+    },
+  },
+  {
+    id: 'hsv',
+    name: 'HSV',
+    convert: toHsv,
+    channels: ['h', 's', 'v'],
+    labels: ['H', 'S', 'V'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.h ?? 0).toFixed(1)}°`,
+          `${((v.s ?? 0) * 100).toFixed(1)}%`,
+          `${((v.v ?? 0) * 100).toFixed(1)}%`,
+        ],
+        css: '',
+      }
+    },
+  },
+  {
+    id: 'hwb',
+    name: 'HWB',
+    convert: toHwb,
+    channels: ['h', 'w', 'b'],
+    labels: ['H', 'W', 'B'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.h ?? 0).toFixed(1)}°`,
+          `${((v.w ?? 0) * 100).toFixed(1)}%`,
+          `${((v.b ?? 0) * 100).toFixed(1)}%`,
+        ],
+        css: `hwb(${(v.h ?? 0).toFixed(1)} ${((v.w ?? 0) * 100).toFixed(1)}% ${((v.b ?? 0) * 100).toFixed(1)}%)`,
+      }
+    },
+  },
+  {
+    id: 'lab',
+    name: 'CIE Lab D50',
+    convert: toLab,
+    channels: ['l', 'a', 'b'],
+    labels: ['L*', 'a*', 'b*'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.l ?? 0).toFixed(2)}`,
+          `${(v.a ?? 0).toFixed(2)}`,
+          `${(v.b ?? 0).toFixed(2)}`,
+        ],
+        css: `lab(${(v.l ?? 0).toFixed(2)}% ${(v.a ?? 0).toFixed(2)} ${(v.b ?? 0).toFixed(2)})`,
+      }
+    },
+  },
+  {
+    id: 'lch',
+    name: 'CIE LCH D50',
+    convert: toLch,
+    channels: ['l', 'c', 'h'],
+    labels: ['L*', 'C*', 'h'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.l ?? 0).toFixed(2)}`,
+          `${(v.c ?? 0).toFixed(2)}`,
+          `${(v.h ?? 0).toFixed(1)}°`,
+        ],
+        css: `lch(${(v.l ?? 0).toFixed(2)}% ${(v.c ?? 0).toFixed(2)} ${(v.h ?? 0).toFixed(1)})`,
+      }
+    },
+  },
+  {
+    id: 'oklab',
+    name: 'OKLab',
+    convert: toOklab,
+    channels: ['l', 'a', 'b'],
+    labels: ['L', 'a', 'b'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.l ?? 0).toFixed(4)}`,
+          `${(v.a ?? 0).toFixed(4)}`,
+          `${(v.b ?? 0).toFixed(4)}`,
+        ],
+        css: `oklab(${(v.l ?? 0).toFixed(4)} ${(v.a ?? 0).toFixed(4)} ${(v.b ?? 0).toFixed(4)})`,
+      }
+    },
+  },
+  {
+    id: 'oklch',
+    name: 'OKLCH',
+    convert: toOklch,
+    channels: ['l', 'c', 'h'],
+    labels: ['L', 'C', 'h'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.l ?? 0).toFixed(4)}`,
+          `${(v.c ?? 0).toFixed(4)}`,
+          `${(v.h ?? 0).toFixed(1)}°`,
+        ],
+        css: `oklch(${(v.l ?? 0).toFixed(4)} ${(v.c ?? 0).toFixed(4)} ${(v.h ?? 0).toFixed(1)})`,
+      }
+    },
+  },
+  {
+    id: 'xyz65',
+    name: 'CIE XYZ D65',
+    convert: toXyz65,
+    channels: ['x', 'y', 'z'],
+    labels: ['X', 'Y', 'Z'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.x ?? 0).toFixed(5)}`,
+          `${(v.y ?? 0).toFixed(5)}`,
+          `${(v.z ?? 0).toFixed(5)}`,
+        ],
+        css: `color(xyz-d65 ${(v.x ?? 0).toFixed(5)} ${(v.y ?? 0).toFixed(5)} ${(v.z ?? 0).toFixed(5)})`,
+      }
+    },
+  },
+  {
+    id: 'lrgb',
+    name: 'Linear sRGB',
+    convert: toLrgb,
+    channels: ['r', 'g', 'b'],
+    labels: ['R', 'G', 'B'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.r ?? 0).toFixed(5)}`,
+          `${(v.g ?? 0).toFixed(5)}`,
+          `${(v.b ?? 0).toFixed(5)}`,
+        ],
+        css: `color(srgb-linear ${(v.r ?? 0).toFixed(5)} ${(v.g ?? 0).toFixed(5)} ${(v.b ?? 0).toFixed(5)})`,
+      }
+    },
+  },
+  {
+    id: 'p3',
+    name: 'Display P3',
+    convert: toP3,
+    channels: ['r', 'g', 'b'],
+    labels: ['R', 'G', 'B'],
+    format: (v) => {
+      if (!v) return { values: ['-', '-', '-'], css: '' }
+      return {
+        values: [
+          `${(v.r ?? 0).toFixed(5)}`,
+          `${(v.g ?? 0).toFixed(5)}`,
+          `${(v.b ?? 0).toFixed(5)}`,
+        ],
+        css: `color(display-p3 ${(v.r ?? 0).toFixed(5)} ${(v.g ?? 0).toFixed(5)} ${(v.b ?? 0).toFixed(5)})`,
+      }
+    },
+  },
+]
 
 function App() {
   const [colorInput, setColorInput] = useState('#3498db')
@@ -17,12 +255,30 @@ function App() {
   const [error, setError] = useState('')
   const [iccReady, setIccReady] = useState(false)
   const [iccError, setIccError] = useState('')
+  const [isVK, setIsVK] = useState(false)
+  const [lang, setLang] = useState('en')
   const lcmsRef = useRef(null)
   const transformsRef = useRef({
     generic: null,
     photoshop4: null,
     photoshop5: null
   })
+
+  const t = i18n[lang]
+
+  // Try to show VK banner ad and detect VK environment
+  useEffect(() => {
+    const initVK = async () => {
+      try {
+        await bridge.send('VKWebAppShowBannerAd', { banner_location: 'bottom' })
+        setIsVK(true)
+        setLang('ru')
+      } catch {
+        // Not inside VK or banner not available
+      }
+    }
+    initVK()
+  }, [])
 
   // Initialize lcms-wasm and ICC profiles
   useEffect(() => {
@@ -42,9 +298,9 @@ function App() {
 
         // Define all CMYK profiles to load
         const profiles = [
-          { key: 'generic', path: '/profiles/GenericCMYK.icc' },
-          { key: 'photoshop4', path: '/profiles/Photoshop4DefaultCMYK.icc' },
-          { key: 'photoshop5', path: '/profiles/Photoshop5DefaultCMYK.icc' }
+          { key: 'generic', path: './profiles/GenericCMYK.icc' },
+          { key: 'photoshop4', path: './profiles/Photoshop4DefaultCMYK.icc' },
+          { key: 'photoshop5', path: './profiles/Photoshop5DefaultCMYK.icc' }
         ]
 
         // Load each CMYK profile and create transforms
@@ -265,6 +521,31 @@ function App() {
     }
   }, [iccReady])
 
+  // Convert to all culori color spaces
+  const convertWithCulori = useCallback((colorValue) => {
+    try {
+      // Build a culori-compatible color string
+      let culoriInput
+      if (colorValue.hex) {
+        culoriInput = colorValue.hex
+      } else if (colorValue.rgb) {
+        culoriInput = `rgb(${colorValue.rgb.r}, ${colorValue.rgb.g}, ${colorValue.rgb.b})`
+      }
+
+      return COLOR_SPACES.map((space) => {
+        try {
+          const converted = space.convert(culoriInput)
+          const formatted = space.format(converted)
+          return { ...space, result: formatted }
+        } catch {
+          return { ...space, result: { values: ['-', '-', '-'], css: '' } }
+        }
+      })
+    } catch {
+      return null
+    }
+  }, [])
+
   const colorValue = getColorValue()
   const colordResult = colorValue ? convertWithColord(colorValue) : null
   const colorConvertResult = colorValue ? convertWithColorConvert(colorValue) : null
@@ -273,6 +554,7 @@ function App() {
   const iccGenericResult = colorValue ? convertWithIccProfile(colorValue, 'generic') : null
   const iccPhotoshop4Result = colorValue ? convertWithIccProfile(colorValue, 'photoshop4') : null
   const iccPhotoshop5Result = colorValue ? convertWithIccProfile(colorValue, 'photoshop5') : null
+  const culoriResults = colorValue ? convertWithCulori(colorValue) : null
 
   // Collect all results for comparison
   const mathResults = [colordResult, colorConvertResult, colorResult, chromaResult].filter(Boolean)
@@ -342,11 +624,50 @@ function App() {
     </div>
   )
 
+  // Color Space Card component for culori results
+  const ColorSpaceCard = ({ space }) => (
+    <div className="color-space-card">
+      <div className="color-space-header">
+        <h4>{space.name}</h4>
+        <span className="color-space-badge">{space.id}</span>
+      </div>
+      <div className="color-space-channels">
+        {space.labels.map((label, i) => (
+          <div key={label} className="channel">
+            <span className="channel-label">{label}</span>
+            <span className="channel-value">{space.result.values[i]}</span>
+          </div>
+        ))}
+      </div>
+      {space.result.css && (
+        <p className="color-space-css">{space.result.css}</p>
+      )}
+    </div>
+  )
+
   return (
-    <div className="app">
+    <div className={`app${isVK ? ' app--vk' : ''}`}>
       <header className="header">
-        <h1>Color<br />Converter</h1>
-        <p className="subtitle">HEX / RGB → CMYK // 4-Library comparison tool</p>
+        <div className="header-top">
+          <h1>{t.title.split('\n').map((line, i) => (
+            <span key={i}>{i > 0 && <br />}{line}</span>
+          ))}</h1>
+          <div className="lang-switcher">
+            <button
+              className={`lang-button ${lang === 'en' ? 'active' : ''}`}
+              onClick={() => setLang('en')}
+            >
+              EN
+            </button>
+            <button
+              className={`lang-button ${lang === 'ru' ? 'active' : ''}`}
+              onClick={() => setLang('ru')}
+            >
+              RU
+            </button>
+          </div>
+        </div>
+        <p className="subtitle">{t.subtitle}</p>
       </header>
 
       <section className="input-section">
@@ -373,7 +694,7 @@ function App() {
               type="text"
               value={colorInput}
               onChange={handleInputChange}
-              placeholder={inputType === 'hex' ? '#RRGGBB' : 'R, G, B'}
+              placeholder={inputType === 'hex' ? t.hexPlaceholder : t.rgbPlaceholder}
               className="color-input"
               spellCheck="false"
               autoComplete="off"
@@ -392,9 +713,7 @@ function App() {
 
           {!colorValue && colorInput && (
             <p className="error-message">
-              {inputType === 'hex'
-                ? 'Invalid HEX // Expected: #RRGGBB or RRGGBB'
-                : 'Invalid RGB // Expected: R, G, B (0-255)'}
+              {inputType === 'hex' ? t.invalidHex : t.invalidRgb}
             </p>
           )}
           {error && <p className="error-message">{error}</p>}
@@ -472,7 +791,7 @@ function App() {
                     {iccError ? (
                       <p className="icc-error">{iccError}</p>
                     ) : (
-                      <p className="icc-loading">Loading ICC profiles...</p>
+                      <p className="icc-loading">{t.loadingIcc}</p>
                     )}
                   </div>
                 </div>
@@ -492,7 +811,7 @@ function App() {
                     <span className="library-badge">loading...</span>
                   </div>
                   <div className="icc-status">
-                    <p className="icc-loading">Loading ICC profiles...</p>
+                    <p className="icc-loading">{t.loadingIcc}</p>
                   </div>
                 </div>
               )}
@@ -511,7 +830,7 @@ function App() {
                     <span className="library-badge">loading...</span>
                   </div>
                   <div className="icc-status">
-                    <p className="icc-loading">Loading ICC profiles...</p>
+                    <p className="icc-loading">{t.loadingIcc}</p>
                   </div>
                 </div>
               )}
@@ -520,12 +839,12 @@ function App() {
             {allResults.length > 1 && (
               <div className="comparison">
                 {allIdentical ? (
-                  <p className="match">All {allResults.length} libraries produce identical results</p>
+                  <p className="match">{t.allMatch(allResults.length)}</p>
                 ) : (
-                  <p className="diff">{uniqueResults} unique results among {allResults.length} libraries</p>
+                  <p className="diff">{t.uniqueResults(uniqueResults, allResults.length)}</p>
                 )}
                 {iccResults.length > 0 && (
-                  <p className="icc-note">ICC Profiles use device-specific conversion (like Adobe Photoshop)</p>
+                  <p className="icc-note">{t.iccNote}</p>
                 )}
               </div>
             )}
@@ -533,8 +852,21 @@ function App() {
         </div>
       )}
 
+      {/* Extended Color Spaces via culori */}
+      {colorValue && culoriResults && (
+        <section className="color-spaces-section">
+          <h2 className="color-spaces-title">{t.colorSpacesTitle}</h2>
+          <p className="color-spaces-subtitle">{t.colorSpacesSubtitle}</p>
+          <div className="color-spaces-grid">
+            {culoriResults.map((space) => (
+              <ColorSpaceCard key={space.id} space={space} />
+            ))}
+          </div>
+        </section>
+      )}
+
       <footer className="footer">
-        <p>Built for testing color conversion accuracy</p>
+        <p>{t.footer}</p>
       </footer>
     </div>
   )
