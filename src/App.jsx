@@ -256,7 +256,7 @@ function App() {
   const [iccReady, setIccReady] = useState(false)
   const [iccError, setIccError] = useState('')
   const [isVK, setIsVK] = useState(false)
-  const [lang, setLang] = useState('en')
+  const [lang, setLang] = useState('ru')
   const lcmsRef = useRef(null)
   const transformsRef = useRef({
     generic: null,
@@ -266,15 +266,15 @@ function App() {
 
   const t = i18n[lang]
 
-  // Try to show VK banner ad and detect VK environment
+  // Initialize VK Bridge and show banner ad
   useEffect(() => {
     const initVK = async () => {
       try {
-        await bridge.send('VKWebAppShowBannerAd', { banner_location: 'bottom' })
+        await bridge.send('VKWebAppInit')
         setIsVK(true)
-        setLang('ru')
+        bridge.send('VKWebAppShowBannerAd', { banner_location: 'bottom' }).catch(() => {})
       } catch {
-        // Not inside VK or banner not available
+        // Not inside VK
       }
     }
     initVK()

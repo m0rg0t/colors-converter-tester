@@ -2,6 +2,18 @@
 
 Comparison tool for RGB-to-CMYK color conversion across JavaScript libraries and ICC profiles, with extended color space support.
 
+## Описание
+
+**Короткое:** Сравнение конвертации цветов из RGB в CMYK между JavaScript-библиотеками и ICC-профилями с поддержкой 10 цветовых пространств.
+
+**Для каталога приложений:**
+
+Конвертер Цветов — инструмент для дизайнеров и разработчиков, который наглядно показывает разницу между способами конвертации цветов. Введите цвет в формате HEX или RGB — приложение мгновенно пересчитает его в CMYK четырьмя JavaScript-библиотеками (colord, color-convert, color, chroma-js) и тремя ICC-профилями (Generic CMYK, Photoshop 4, Photoshop 5), а также покажет значения в десяти цветовых пространствах: HSL, HSV, HWB, Lab, LCH, OKLab, OKLCH, XYZ D65, Linear RGB и Display P3.
+
+Единственно правильного способа перевести RGB в CMYK не существует: математические формулы, аппаратно-независимые и аппаратно-зависимые профили дают разные значения для одного и того же цвета. Приложение ставит результаты рядом, чтобы вы могли выбрать метод, подходящий для вашей задачи — веб-дизайна, допечатной подготовки или исследования цвета.
+
+Работает полностью в браузере, без серверной обработки. ICC-профили обрабатываются через lcms-wasm — WebAssembly-порт движка Little CMS, который используется в GIMP, Firefox и профессиональном полиграфическом ПО. Интерфейс на русском и английском языках.
+
 ## About
 
 Colors Converter Tester is a VK Mini App designed for developers and designers who need to understand the differences between color conversion methods. The application takes a color in HEX or RGB format and simultaneously converts it using four JavaScript libraries (colord, color-convert, color, chroma-js), three ICC profiles (Generic CMYK, Photoshop 4 Default, Photoshop 5 Default), and renders the result in ten additional color spaces (HSL, HSV, HWB, Lab, LCH, OKLab, OKLCH, XYZ D65, Linear RGB, Display P3) via the culori library.
