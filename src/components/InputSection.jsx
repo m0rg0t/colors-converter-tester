@@ -34,6 +34,7 @@ export function InputSection({
         <div className="color-input-wrapper">
           <input
             type="text"
+            aria-label={t.inputLabel}
             value={colorInput}
             onChange={onInputChange}
             placeholder={inputType === 'hex' ? t.hexPlaceholder : t.rgbPlaceholder}
@@ -45,6 +46,7 @@ export function InputSection({
             <div className="color-picker-wrapper">
               <input
                 type="color"
+                aria-label={t.previewLabel}
                 value={previewHex}
                 onChange={(e) => onColorInput(e.target.value)}
                 className="color-picker"
@@ -54,7 +56,7 @@ export function InputSection({
         </div>
 
         {!colorValue && colorInput && (
-          <p className="error-message">
+          <p className="error-message" role="alert">
             {inputType === 'hex' ? t.invalidHex : t.invalidRgb}
           </p>
         )}

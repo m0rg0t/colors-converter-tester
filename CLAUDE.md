@@ -12,12 +12,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Tech Stack
 
-- React 19 with Vite 7 (ES Modules, `"type": "module"`)
+- React 19 with Vite 8 (ES Modules, `"type": "module"`)
 - CMYK conversion: colord (with CMYK plugin), color-convert, color, chroma-js
 - Extended color spaces: culori (HSL, HSV, HWB, Lab, LCH, OKLab, OKLCH, XYZ D65, Linear RGB, Display P3)
 - ICC profiles: lcms-wasm (WebAssembly port of Little CMS)
 - VK Mini Apps: @vkontakte/vk-bridge, @vkontakte/vkui, @vkontakte/vk-miniapps-deploy (dev)
-- ESLint 9 flat config with React Hooks and React Refresh plugins
+- ESLint 10 flat config with React Hooks and React Refresh plugins
 
 ## Architecture
 
@@ -67,7 +67,7 @@ VK Mini App for comparing color conversion results across multiple libraries and
 
 ## Notes
 
-- No testing framework currently configured
+- Vitest tests in tests/ and Playwright journeys in browser-tests/; npm run check runs lint, tests and build
 - Single-page app with no routing
 - State managed via React useState hooks and custom hooks
 - ICC profiles stored in `public/profiles/` (GenericCMYK.icc, FOGRA39.icc, GRACoL2013_CRPC6.icc, SWOP2013C3_CRPC5.icc)

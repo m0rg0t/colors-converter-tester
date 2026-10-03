@@ -78,3 +78,9 @@ app store icon. Clean vector look.
 ## License
 
 MIT
+
+## Maintenance checks
+
+Use Node 24, `npm ci --no-audit` and `npm run check`. `npm run test:browser`
+uses actual Wasm and the bundled ICC profiles with only VK host calls mocked.
+See [verification and limitations](docs/maintenance-validation.md).

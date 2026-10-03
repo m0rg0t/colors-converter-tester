@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { instantiate, TYPE_RGB_8, TYPE_CMYK_8, INTENT_PERCEPTUAL } from 'lcms-wasm'
+import { instantiate } from 'lcms-wasm'
+import { loadIccTransforms } from '../utils/iccTransforms'
 import wasmFileURI from 'lcms-wasm/dist/lcms.wasm?url'
 import { ICC_PROFILES } from '../config/iccProfiles'
 import { extractRgb } from '../utils/colorParsing'
@@ -20,58 +21,31 @@ export function useIccProfiles() {
 
   // Initialize lcms-wasm and ICC profiles
   useEffect(() => {
+    const controller = new AbortController()
+    let resources = null
+    let active = true
     const initICC = async () => {
       try {
-        // Instantiate lcms-wasm
-        const lcms = await instantiate({
-          locateFile: () => wasmFileURI,
-        })
+        const lcms = await instantiate({ locateFile: () => wasmFileURI })
+        if (!active) return
+        resources = await loadIccTransforms(lcms, ICC_PROFILES, { signal: controller.signal })
+        if (!active) { resources.dispose(); return }
         lcmsRef.current = lcms
-
-        // Create sRGB input profile (built-in)
-        const srgbProfile = lcms.cmsCreate_sRGBProfile()
-        if (!srgbProfile) {
-          throw new Error('Failed to create sRGB profile')
-        }
-
-        // Load each CMYK profile and create transforms
-        for (const profile of ICC_PROFILES) {
-          const response = await fetch(profile.path)
-          if (!response.ok) {
-            throw new Error(`Failed to load ${profile.key} profile`)
-          }
-          const buffer = await response.arrayBuffer()
-          const cmykProfile = lcms.cmsOpenProfileFromMem(
-            new Uint8Array(buffer),
-            buffer.byteLength
-          )
-          if (!cmykProfile) {
-            throw new Error(`Failed to parse ${profile.key} profile`)
-          }
-
-          // Create transform: sRGB -> CMYK with perceptual intent
-          const transform = lcms.cmsCreateTransform(
-            srgbProfile,
-            TYPE_RGB_8,
-            cmykProfile,
-            TYPE_CMYK_8,
-            INTENT_PERCEPTUAL,
-            0
-          )
-          if (!transform) {
-            throw new Error(`Failed to create transform for ${profile.key}`)
-          }
-          transformsRef.current[profile.key] = transform
-        }
-
+        transformsRef.current = resources.transforms
         setIccReady(true)
       } catch (err) {
-        console.error('ICC initialization error:', err)
-        setIccError(err.message)
+        if (active) setIccError(err instanceof Error ? err.message : String(err))
       }
     }
+    void initICC()
+    return () => {
+      active = false
+      controller.abort()
+      resources?.dispose()
+      lcmsRef.current = null
+      transformsRef.current = {}
+    }
 
-    initICC()
   }, [])
 
   // Convert color using ICC profile
