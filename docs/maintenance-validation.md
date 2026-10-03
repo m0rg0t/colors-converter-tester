@@ -14,6 +14,10 @@ failure. Late Wasm/profile requests cannot publish stale resources after unmount
 Tests also cover asynchronous VK initialization failure, which previously escaped
 its synchronous try/catch. Standalone color conversion remains usable.
 
+The 320px browser check exposed horizontal overflow from grid/input minimum sizes
+and the Russian heading beside language buttons. Allow those tracks and inputs to
+shrink, wrap the heading controls, and retain all visible results at small widths.
+
 ## Dependencies and compatibility
 
 React 19.3 / Bridge 3.0.2 / VKUI 8.4.1 / Vite 8.3.2 / ESLint 10 / Colord 2.10.
@@ -33,8 +37,11 @@ Only Bridge host calls use an explicit serve-only fixture. Production builds use
 the real SDK. The original ICC files, artwork and tracked archive are preserved.
 No color profile, user file or converted payload is uploaded externally.
 
-Install and CI commands disable npm audit; no dependency graph is submitted and
-this report makes no zero-vulnerability claim. Existing lcms upstream build warnings
+Install and CI commands disable implicit npm audit. The separately approved full
+audit initially found 26 affected dependency entries; updating compatible transitive
+versions resolves them, and the final full audit reports zero vulnerabilities on
+2026-10-03. Raw audit JSON and check logs are retained with campaign evidence.
+Existing lcms upstream build warnings
 about its Node-only module branch are verified through both Node and browser paths.
 Native VK banner/insets and device-specific rendering remain release checks. Numeric
 profile consistency does not claim physical print calibration or printer accuracy.
