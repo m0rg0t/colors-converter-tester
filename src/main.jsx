@@ -6,7 +6,7 @@ import App from './App.jsx'
 
 // Initialize VK Bridge — silently fails outside VK WebView
 try {
-  bridge.send('VKWebAppInit')
+  void bridge.send('VKWebAppInit').catch(() => { /* Standalone use remains available. */ })
 } catch {
   // Running standalone, not inside VK
 }

@@ -1,0 +1,66 @@
+import { expect, test } from '@playwright/test'
+
+const values = (page) => page.locator('.cmyk-string').allTextContents()
+const ready = async (page) => {
+  await expect(page.locator('.cmyk-string')).toHaveCount(8, { timeout: 30000 })
+  await expect(page.locator('.icc-loading, .icc-error')).toHaveCount(0)
+}
+
+test('three-digit HEX matches full HEX in all real ICC and mathematical results', async ({ page }, info) => {
+  const errors = []; page.on('pageerror', (error) => errors.push(error.message))
+  await page.goto('/')
+  await ready(page)
+  await page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ }).fill('#abc')
+  await expect(page.locator('.preview-rgb')).toHaveText('RGB(170, 187, 204)')
+  const short = await values(page)
+  await page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ }).fill('#aabbcc')
+  await expect.poll(() => values(page)).toEqual(short)
+  expect(short).toHaveLength(8)
+  expect(short.join(' ')).not.toMatch(/NaN|Infinity/)
+  await page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ }).fill('#fff')
+  await expect(page.locator('.preview-rgb')).toHaveText('RGB(255, 255, 255)')
+  const white = await values(page)
+  await page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ }).fill('#ffffff')
+  await expect.poll(() => values(page)).toEqual(white)
+  await expect(page.locator('.color-space-card')).toHaveCount(10)
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(true)
+  await page.screenshot({ path: info.outputPath('white-profiles.png'), fullPage: true })
+  expect(errors).toEqual([])
+})
+
+test('invalid RGB recovers and language switching preserves the chosen color', async ({ page }) => {
+  await page.goto('/?vk_mock=ads-unavailable')
+  await ready(page)
+  await page.getByRole('button', { name: 'RGB', exact: true }).click()
+  await page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ }).fill('rgb(12,34,56')
+  await expect(page.getByRole('alert')).toBeVisible()
+  await expect(page.locator('.cmyk-string')).toHaveCount(0)
+  await page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ }).fill('rgb(12,34,56)')
+  await ready(page)
+  await expect(page.locator('.preview-rgb')).toHaveText('RGB(12, 34, 56)')
+  const rgb = await values(page)
+  await page.getByRole('button', { name: 'RU', exact: true }).click()
+  await expect(page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ })).toHaveValue('rgb(12,34,56)')
+  await expect.poll(() => values(page)).toEqual(rgb)
+})
+
+test('missing ICC profile fails visibly while mathematical results remain usable, then reload recovers', async ({ page }) => {
+  await page.route('**/profiles/FOGRA39.icc', (route) => route.fulfill({ status: 503, body: 'Synthetic unavailable profile' }))
+  await page.goto('/')
+  await expect(page.locator('.icc-error')).toContainText('Failed to load fogra39')
+  await expect(page.locator('.cmyk-string')).toHaveCount(4)
+  await page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ }).fill('#000')
+  await expect(page.locator('.preview-rgb')).toHaveText('RGB(0, 0, 0)')
+  await page.unroute('**/profiles/FOGRA39.icc')
+  await page.reload()
+  await ready(page)
+})
+
+test('asynchronous Bridge initialization rejection does not become a page error', async ({ page }) => {
+  const errors = []; page.on('pageerror', (error) => errors.push(error.message))
+  await page.goto('/?vk_mock=init-unavailable')
+  await ready(page)
+  await page.getByRole('textbox', { name: /^(INPUT|ВВОД)$/ }).fill('#f00')
+  await expect(page.locator('.preview-rgb')).toHaveText('RGB(255, 0, 0)')
+  expect(errors).toEqual([])
+})

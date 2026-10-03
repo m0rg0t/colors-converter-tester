@@ -1,55 +1,33 @@
-// Validation patterns
-const HEX_REGEX = /^#?([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/
-const RGB_REGEX = /^(?:rgb\s*\(\s*)?(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)?$/i
+const HEX_REGEX = /^#?([a-f0-9]{6}|[a-f0-9]{3})$/i
+const RGB_CHANNELS = /^(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})$/
+const validRgb = (rgb) => rgb && ['r', 'g', 'b'].every((key) => Number.isInteger(rgb[key]) && rgb[key] >= 0 && rgb[key] <= 255)
 
-/**
- * Parse color input and return normalized hex/rgb value
- * @param {string} input - User input string
- * @param {'hex'|'rgb'} inputType - Type of input
- * @returns {{ hex: string|null, rgb: { r: number, g: number, b: number }|null } | null}
- */
+/** Parse supported HEX or comma-separated RGB without coercing invalid channels. */
 export function parseColorInput(input, inputType) {
-  try {
-    if (inputType === 'hex') {
-      if (!HEX_REGEX.test(input)) {
-        return null
-      }
-      const hex = input.startsWith('#') ? input : `#${input}`
-      return { hex, rgb: null }
-    } else {
-      const rgbMatch = input.match(RGB_REGEX)
-      if (!rgbMatch) {
-        return null
-      }
-      const r = parseInt(rgbMatch[1], 10)
-      const g = parseInt(rgbMatch[2], 10)
-      const b = parseInt(rgbMatch[3], 10)
-      if (r > 255 || g > 255 || b > 255) {
-        return null
-      }
-      return { hex: null, rgb: { r, g, b } }
-    }
-  } catch {
-    return null
+  if (typeof input !== 'string') return null
+  const value = input.trim()
+  if (inputType === 'hex') {
+    const match = value.match(HEX_REGEX)
+    if (!match) return null
+    const hex = match[1].length === 3 ? [...match[1]].map((digit) => digit + digit).join('') : match[1]
+    return { hex: `#${hex.toLowerCase()}`, rgb: null }
   }
+  if (inputType !== 'rgb') return null
+  // A functional form must have both parentheses; bare comma-separated channels are also accepted.
+  const functional = value.match(/^rgb\s*\((.*)\)$/i)
+  const channels = functional ? functional[1].trim() : value
+  const match = channels.match(RGB_CHANNELS)
+  if (!match) return null
+  const rgb = { r: Number(match[1]), g: Number(match[2]), b: Number(match[3]) }
+  return validRgb(rgb) ? { hex: null, rgb } : null
 }
 
-/**
- * Extract RGB values from a colorValue object
- * @param {{ hex: string|null, rgb: { r: number, g: number, b: number }|null }} colorValue
- * @returns {{ r: number, g: number, b: number } | null}
- */
+/** Return only validated 8-bit RGB channels, including expanded three-digit HEX. */
 export function extractRgb(colorValue) {
-  if (colorValue.rgb) {
-    return colorValue.rgb
-  }
-  if (colorValue.hex) {
-    const hex = colorValue.hex.replace('#', '')
-    return {
-      r: parseInt(hex.substring(0, 2), 16),
-      g: parseInt(hex.substring(2, 4), 16),
-      b: parseInt(hex.substring(4, 6), 16),
-    }
-  }
-  return null
+  if (!colorValue || typeof colorValue !== 'object') return null
+  if (colorValue.rgb) return validRgb(colorValue.rgb) ? { ...colorValue.rgb } : null
+  const parsed = parseColorInput(colorValue.hex, 'hex')
+  if (!parsed) return null
+  const hex = parsed.hex.slice(1)
+  return { r: parseInt(hex.slice(0, 2), 16), g: parseInt(hex.slice(2, 4), 16), b: parseInt(hex.slice(4, 6), 16) }
 }

@@ -19,11 +19,15 @@
 
 .header-top {
   display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
   justify-content: space-between;
   align-items: flex-start;
 }
 
 .header h1 {
+  min-width: 0;
+  overflow-wrap: anywhere;
   font-family: var(--font-display);
   font-size: clamp(4rem, 15vw, 10rem);
   line-height: 0.85;
@@ -152,6 +156,7 @@
 
 /* Color input wrapper */
 .color-input-group {
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
@@ -164,6 +169,8 @@
 }
 
 .color-input {
+  min-width: 0;
+  width: 100%;
   flex: 1;
   padding: var(--space-md);
   font-family: var(--font-mono);
@@ -224,7 +231,7 @@
 /* Main content grid */
 .content-grid {
   display: grid;
-  grid-template-columns: 1fr 2fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
   gap: var(--space-lg);
 }
 
@@ -535,6 +542,7 @@
 
 /* CMYK string output */
 .cmyk-string {
+  overflow-wrap: anywhere;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-secondary);
@@ -653,6 +661,7 @@
 }
 
 .color-spaces-title {
+  overflow-wrap: anywhere;
   font-family: var(--font-display);
   font-size: clamp(2rem, 5vw, 3.5rem);
   line-height: 1;
@@ -810,12 +819,27 @@
 }
 
 .footer p {
+  overflow-wrap: anywhere;
   font-family: var(--font-mono);
   font-size: 0.75rem;
   color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.15em;
   margin: 0;
+}
+
+/* Keep min-content widths and later desktop rules from widening small screens. */
+@media (max-width: 600px) {
+  .header h1 { font-size: clamp(2rem, 12vw, 5rem); }
+  .content-grid, .input-section, .results-grid, .color-spaces-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .preview-section, .results-section { padding: var(--space-md); }
+  .result-card { padding: var(--space-sm); }
+  .cmyk-values { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; }
+  .cmyk-value { padding: var(--space-sm) 2px; }
+  .cmyk-value .value { font-size: .8rem; }
+  .cmyk-string { font-size: .65rem; padding: var(--space-xs); }
 }
 
 /* Animations - minimal, purposeful */
